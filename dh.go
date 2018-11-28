@@ -34,13 +34,16 @@ func (g dhgroup) Bytes(x *big.Int) []byte {
 }
 
 // hashPrime is the H' hash function from the I-D. It maps byte slices to group
-// elements.
+// elements (i.e., elements in Z^*_p).
 func hashPrime(dh dhgroup, data []byte) *big.Int {
 	h := hasher()
 	h.Write(data)
 	x := new(big.Int)
 	x.SetBytes(h.Sum(nil))
 	x.Mod(x, dh.p)
+	if x.Sign() == 0 {
+		x.SetInt64(1)
+	}
 	return x
 }
 
