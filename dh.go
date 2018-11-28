@@ -29,7 +29,7 @@ func (g dhgroup) Bytes(x *big.Int) []byte {
 	b := z.Bytes()
 	padLen := g.bitLen/8 - len(b)
 	res := make([]byte, g.bitLen/8)
-	copy(res[len(res)-padLen:], b)
+	copy(res[padLen:], b)
 	return res
 }
 

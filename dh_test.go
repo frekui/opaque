@@ -9,6 +9,8 @@ import (
 	"bytes"
 	"math/big"
 	"testing"
+
+	"github.com/go-test/deep"
 )
 
 func TestDh(t *testing.T) {
@@ -70,6 +72,27 @@ func TestIsInSmallSubgroup(t *testing.T) {
 	for _, x := range []int64{1, 10} {
 		if !isInSmallSubgroup(big.NewInt(x), big.NewInt(11)) {
 			t.Fatalf("%v unexpectedly not in small subgroup", x)
+		}
+	}
+}
+
+func TestBytes(t *testing.T) {
+	for _, tst := range []struct {
+		x      int64
+		p      int64
+		bitLen int
+		b      []byte
+	}{
+		{0, 11, 8, []byte{0}},
+		{5, 11, 8, []byte{5}},
+		{300, 373, 16, []byte{1, 44}},
+		{1, 373, 16, []byte{0, 1}},
+	} {
+		// Generator doesn't matter for the Bytes function.
+		g := dhgroup{g: big.NewInt(2), p: big.NewInt(tst.p), bitLen: tst.bitLen}
+		actual := g.Bytes(big.NewInt(tst.x))
+		if diff := deep.Equal(actual, tst.b); diff != nil {
+			t.Fatalf("diff: %v\n", diff)
 		}
 	}
 }
