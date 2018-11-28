@@ -24,13 +24,14 @@ https://godoc.org/github.com/frekui/opaque
 
 ## Examples
 
-The repo contains a sample [client](cmd/client.go) and [server](cmd/server.go)
-that authenticates each other using package opaque.
+The repo contains a sample [client](cmd/client/main.go) and
+[server](cmd/server/main.go) that authenticates each other using package opaque.
 
-# License
+## License
 
 Copyright (c) 2018 Fredrik Kuivinen, frekui@gmail.com. Use of this source code
-is governed by the BSD-style license that can be found in the LICENSE file.
+is governed by the BSD-style license that can be found in the [LICENSE](LICENSE)
+file.
 
 ## References
 
