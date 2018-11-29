@@ -186,11 +186,11 @@ func Auth1(privS *rsa.PrivateKey, user *User, msg1 AuthMsg1) (*AuthServerSession
 	return session, msg2, nil
 }
 
-// Auth2 is the processing done by the server when it receives an AuthMsg1
-// struct. On success a nil error is returned together with a AuthServerSession
-// and an AuthMsg2 struct. The AuthMsg2 struct be sent to the server. On a
-// successful completion of the protocol the secret will be shared between the
-// client and the server. AuthMsg2 is the final round in the authentication
+// Auth2 is the processing done by the client when it receives an AuthMsg2
+// struct. On success a nil error is returned together with a secret byte slice
+// and an AuthMsg3 struct. The AuthMsg3 struct should be sent to the server. On
+// a successful completion of the protocol the secret will be shared between the
+// client and the server. Auth2 is the final round in the authentication
 // protocol for the client.
 //
 // If Auth2 returns a nil error the client has authenticated the server
