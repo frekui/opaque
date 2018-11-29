@@ -11,9 +11,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"io"
 	"math/big"
 
 	"github.com/frekui/opaque/internal/pkg/authenc"
+	"golang.org/x/crypto/hkdf"
 )
 
 // AuthClientSession keeps track of state needed on the client-side during a
@@ -30,10 +32,12 @@ type AuthClientSession struct {
 // run of the authentication protocol.
 type AuthServerSession struct {
 	// Server ephemeral private D-H key for this session.
-	y           *big.Int
-	dhPubClient *big.Int
-	dhPubServer *big.Int
-	pubS        *rsa.PublicKey
+	y              *big.Int
+	dhPubClient    *big.Int
+	dhPubServer    *big.Int
+	dhMacKey       []byte
+	dhSharedSecret []byte
+	pubS           *rsa.PublicKey
 
 	user *User
 }
@@ -175,13 +179,19 @@ func Auth1(privS *rsa.PrivateKey, user *User, msg1 AuthMsg1) (*AuthServerSession
 		return nil, AuthMsg2{}, err
 	}
 	msg2.DhSig = sig
-	msg2.DhMac = computeDhMac(sharedSecret(dhGroup, y, msg1.DhPubClient), &privS.PublicKey)
+	dhSharedSecret, dhMacKey, err := dhSecrets(y, msg1.DhPubClient)
+	if err != nil {
+		return nil, AuthMsg2{}, err
+	}
+	msg2.DhMac = computeDhMac(dhMacKey, &privS.PublicKey)
 	session := &AuthServerSession{
-		y:           y,
-		dhPubServer: msg2.DhPubServer,
-		dhPubClient: msg1.DhPubClient,
-		pubS:        &privS.PublicKey,
-		user:        user,
+		y:              y,
+		dhPubServer:    msg2.DhPubServer,
+		dhPubClient:    msg1.DhPubClient,
+		pubS:           &privS.PublicKey,
+		user:           user,
+		dhMacKey:       dhMacKey,
+		dhSharedSecret: dhSharedSecret,
 	}
 	return session, msg2, nil
 }
@@ -220,23 +230,26 @@ func Auth2(sess *AuthClientSession, msg2 AuthMsg2) (secret []byte, msg3 AuthMsg3
 	if err != nil {
 		return nil, AuthMsg3{}, err
 	}
-	secret = sharedSecret(dhGroup, sess.x, msg2.DhPubServer)
-	if !verifyDhMac(secret, envU.pubS, msg2.DhMac) {
+	dhSharedSecret, dhMacKey, err := dhSecrets(sess.x, msg2.DhPubServer)
+	if err != nil {
+		return nil, AuthMsg3{}, err
+	}
+	if !verifyDhMac(dhMacKey, envU.pubS, msg2.DhMac) {
 		return nil, AuthMsg3{}, errors.New("MAC mismatch")
 	}
 	sig, err := rsa.SignPSS(randr, envU.privU, hasherId, h.Sum(nil), nil)
 	if err != nil {
 		return nil, AuthMsg3{}, err
 	}
-	mac := computeDhMac(secret, &envU.privU.PublicKey)
-	return secret, AuthMsg3{DhSig: sig, DhMac: mac}, nil
+	mac := computeDhMac(dhMacKey, &envU.privU.PublicKey)
+	return dhSharedSecret, AuthMsg3{DhSig: sig, DhMac: mac}, nil
 }
 
 // Auth3 is the processing done by the server when it receives an AuthMsg3
 // struct. On success a nil error is returned together with a secret. On
 // successful completion the secret returned by this function is equal to the
-// secret returned by the function Auth2 invoked on the client. Auth3 is the
-// final round in the authentication protocol.
+// secret returned by Auth2 invoked on the client. Auth3 is the final round in
+// the authentication protocol.
 //
 // If Auth3 returns a nil error the server has authenticated the client (i.e.,
 // the client has proved to the server that it posses information used when the
@@ -253,11 +266,10 @@ func Auth3(sess *AuthServerSession, msg3 AuthMsg3) (secret []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	secret = sharedSecret(dhGroup, sess.y, sess.dhPubClient)
-	if !verifyDhMac(secret, sess.user.PubU, msg3.DhMac) {
+	if !verifyDhMac(sess.dhMacKey, sess.user.PubU, msg3.DhMac) {
 		return nil, errors.New("MAC mismatch")
 	}
-	return secret, nil
+	return sess.dhSharedSecret, nil
 }
 
 func computeDhMac(key []byte, pk *rsa.PublicKey) []byte {
@@ -275,4 +287,19 @@ func computeDhMac(key []byte, pk *rsa.PublicKey) []byte {
 func verifyDhMac(key []byte, pk *rsa.PublicKey, origMac []byte) bool {
 	mac := computeDhMac(key, pk)
 	return hmac.Equal(mac, origMac)
+}
+
+func dhSecrets(dhPriv, dhPub *big.Int) (dhSharedSecret, dhMacKey []byte, err error) {
+	kdf := hkdf.New(hasher, sharedSecret(dhGroup, dhPriv, dhPub), nil, nil)
+	dhSharedSecret = make([]byte, 16)
+	dhMacKey = make([]byte, 16)
+	_, err = io.ReadFull(kdf, dhSharedSecret)
+	if err != nil {
+		return
+	}
+	_, err = io.ReadFull(kdf, dhMacKey)
+	if err != nil {
+		return
+	}
+	return
 }

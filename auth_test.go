@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
+	"math/big"
 	"testing"
 )
 
@@ -84,4 +85,22 @@ func authenticate(privS *rsa.PrivateKey, user *User, password string, skipMsg2Er
 		return fmt.Errorf("Shared secrets differ")
 	}
 	return nil
+}
+
+func TestDhSecrets(t *testing.T) {
+	priv, err := generatePrivateKey(dhGroup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pub := generatePublicKey(dhGroup, priv)
+	shared, key, err := dhSecrets(priv, pub)
+	if len(shared) < 16 {
+		t.Fatalf("len(shared) = %d < 16", len(shared))
+	}
+	if len(key) < 16 {
+		t.Fatalf("len(key) = %d < 16", len(key))
+	}
+	if bytes.Equal(shared, key) {
+		t.Fatalf("shared = key = %v", shared)
+	}
 }
