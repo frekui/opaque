@@ -59,7 +59,11 @@ func dhOprf2(a, k *big.Int) (v *big.Int, b *big.Int, err error) {
 	// From I-D: All received values (a, b, v) are checked to be non-unit
 	// elements in G.
 	//
-	// We check that a is not in a two element subgroup of dhGroup.
+	// First check that a is in Z^*_p.
+	if !isInGroup(a, dhGroup.p) {
+		return nil, nil, errors.New("a is not in D-H group")
+	}
+	// Also check that a is not in a two element subgroup of dhGroup.
 	if isInSmallSubgroup(a, dhGroup.p) {
 		return nil, nil, errors.New("a is in a small subgroup")
 	}
@@ -80,9 +84,16 @@ func dhOprf3(x string, v, b, r *big.Int) ([]byte, error) {
 	// From I-D: All received values (a, b, v) are checked to be non-unit
 	// elements in G.
 	//
-	// We check that v and b are not in a two element subgroup of dhGroup.
+	// We check that v and b are in Z^*_p and they aren't in a two element
+	// subgroup.
+	if !isInGroup(v, dhGroup.p) {
+		return nil, errors.New("v is not in D-H group")
+	}
 	if isInSmallSubgroup(v, dhGroup.p) {
 		return nil, errors.New("v is in a small subgroup")
+	}
+	if !isInGroup(b, dhGroup.p) {
+		return nil, errors.New("b is not in D-H group")
 	}
 	if isInSmallSubgroup(b, dhGroup.p) {
 		return nil, errors.New("b is in a small subgroup")

@@ -96,3 +96,23 @@ func TestBytes(t *testing.T) {
 		}
 	}
 }
+
+func TestIsInGroup(t *testing.T) {
+	for _, tst := range []struct {
+		x        int64
+		p        int64
+		expected bool
+	}{
+		{-1, 11, false},
+		{0, 11, false},
+		{1, 11, true},
+		{10, 11, true},
+		{11, 11, false},
+		{12, 11, false},
+	} {
+		actual := isInGroup(big.NewInt(tst.x), big.NewInt(tst.p))
+		if actual != tst.expected {
+			t.Fatalf("x=%v got %v", tst.x, actual)
+		}
+	}
+}

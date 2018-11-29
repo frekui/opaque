@@ -80,6 +80,14 @@ func isInSmallSubgroup(x *big.Int, p *big.Int) bool {
 	return false
 }
 
+// isInGroup returns true if x is in the group Z^*_p and false otherwise.
+func isInGroup(x *big.Int, p *big.Int) bool {
+	if big.NewInt(0).Cmp(x) != -1 || x.Cmp(p) != -1 {
+		return false
+	}
+	return true
+}
+
 func generatePrivateKey(dh dhgroup) (*big.Int, error) {
 	for {
 		key, err := rand.Int(randr, dh.p)
