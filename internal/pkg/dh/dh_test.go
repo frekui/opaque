@@ -50,12 +50,12 @@ func TestIsSafePrime(t *testing.T) {
 	// List from https://oeis.org/A005385
 	for _, x := range []int64{5, 7, 11, 23, 47, 59, 83, 107, 167, 179, 227, 263, 347, 359, 383, 467, 479, 503, 563, 587, 719, 839, 863, 887, 983, 1019, 1187, 1283, 1307, 1319, 1367, 1439, 1487, 1523, 1619, 1823, 1907} {
 		if !isSafePrime(big.NewInt(x)) {
-			t.Fatalf("%v is safe but isSafePrime returned false", x)
+			t.Fatalf("%v is safe but IsSafePrime returned false", x)
 		}
 	}
 	for _, x := range []int64{17} {
 		if isSafePrime(big.NewInt(x)) {
-			t.Fatalf("%v is not safe but isSafePrime returned false", x)
+			t.Fatalf("%v is not safe but IsSafePrime returned false", x)
 		}
 	}
 
@@ -90,7 +90,6 @@ func TestBytes(t *testing.T) {
 		{300, 373, []byte{1, 44}},
 		{1, 373, []byte{0, 1}},
 	} {
-		// Generator doesn't matter for the Bytes function.
 		g := Group{G: big.NewInt(2), P: big.NewInt(tst.p)}
 		actual := g.Bytes(big.NewInt(tst.x))
 		if diff := deep.Equal(actual, tst.b); diff != nil {

@@ -61,12 +61,11 @@ func (g Group) IsInSmallSubgroup(x *big.Int) bool {
 	if x.Cmp(big.NewInt(1)) == 0 {
 		return true
 	}
-	sq := new(big.Int)
-	sq.Exp(x, big.NewInt(2), g.P)
-	if sq.Cmp(big.NewInt(1)) == 0 {
+	pm1 := new(big.Int)
+	pm1.Sub(g.P, big.NewInt(1))
+	if x.Cmp(pm1) == 0 {
 		return true
 	}
-
 	return false
 }
 
