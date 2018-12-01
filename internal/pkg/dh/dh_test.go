@@ -14,21 +14,21 @@ import (
 )
 
 func TestDh(t *testing.T) {
-	dhGroup := Rfc3526_2048
-	privA, err := GeneratePrivateKey(dhGroup)
+	g := Rfc3526_2048
+	privA, err := g.GeneratePrivateKey()
 	if err != nil {
 		panic(err)
 	}
-	pubA := GeneratePublicKey(dhGroup, privA)
+	pubA := g.GeneratePublicKey(privA)
 
-	privB, err := GeneratePrivateKey(dhGroup)
+	privB, err := g.GeneratePrivateKey()
 	if err != nil {
 		panic(err)
 	}
-	pubB := GeneratePublicKey(dhGroup, privB)
+	pubB := g.GeneratePublicKey(privB)
 
-	sharedA := SharedSecret(dhGroup, privA, pubB)
-	sharedB := SharedSecret(dhGroup, privB, pubA)
+	sharedA := g.SharedSecret(privA, pubB)
+	sharedB := g.SharedSecret(privB, pubA)
 	if !bytes.Equal(sharedA, sharedB) {
 		t.Fatalf("sharedA != sharedB")
 	}
@@ -66,12 +66,14 @@ func TestIsSafePrime(t *testing.T) {
 
 func TestIsInSmallSubgroup(t *testing.T) {
 	for _, x := range []int64{2, 3, 4, 5, 6, 7, 8, 9} {
-		if IsInSmallSubgroup(big.NewInt(x), big.NewInt(11)) {
+		g := Group{G: big.NewInt(2), P: big.NewInt(11)}
+		if g.IsInSmallSubgroup(big.NewInt(x)) {
 			t.Fatalf("%v unexpectedly in small subgroup", x)
 		}
 	}
 	for _, x := range []int64{1, 10} {
-		if !IsInSmallSubgroup(big.NewInt(x), big.NewInt(11)) {
+		g := Group{G: big.NewInt(2), P: big.NewInt(11)}
+		if !g.IsInSmallSubgroup(big.NewInt(x)) {
 			t.Fatalf("%v unexpectedly not in small subgroup", x)
 		}
 	}
@@ -110,7 +112,8 @@ func TestIsInGroup(t *testing.T) {
 		{11, 11, false},
 		{12, 11, false},
 	} {
-		actual := IsInGroup(big.NewInt(tst.x), big.NewInt(tst.p))
+		g := Group{G: big.NewInt(2), P: big.NewInt(tst.p)}
+		actual := g.IsInGroup(big.NewInt(tst.x))
 		if actual != tst.expected {
 			t.Fatalf("x=%v got %v", tst.x, actual)
 		}
