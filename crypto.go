@@ -10,6 +10,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"hash"
+
+	"github.com/frekui/opaque/internal/pkg/dh"
 )
 
 var randr = rand.Reader
@@ -20,3 +22,5 @@ func hasher() hash.Hash {
 }
 
 var hasherId = crypto.SHA256
+
+var dhGroup = dh.Rfc3526_2048

@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+
+	"github.com/frekui/opaque/internal/pkg/dh"
 )
 
 func TestAuth(t *testing.T) {
@@ -145,11 +147,11 @@ func authenticate(privS *rsa.PrivateKey, user *User, password string, msg1Mod fu
 }
 
 func TestDhSecrets(t *testing.T) {
-	priv, err := generatePrivateKey(dhGroup)
+	priv, err := dh.GeneratePrivateKey(dhGroup)
 	if err != nil {
 		t.Fatal(err)
 	}
-	pub := generatePublicKey(dhGroup, priv)
+	pub := dh.GeneratePublicKey(dhGroup, priv)
 	shared, key, err := dhSecrets(priv, pub)
 	if len(shared) < 16 {
 		t.Fatalf("len(shared) = %d < 16", len(shared))

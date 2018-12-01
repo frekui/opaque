@@ -3,7 +3,7 @@
 // Use of this source code is governed by the BSD-style license that can be
 // found in the LICENSE file.
 
-package opaque
+package dh
 
 import (
 	"bytes"
@@ -14,20 +14,21 @@ import (
 )
 
 func TestDh(t *testing.T) {
-	privA, err := generatePrivateKey(dhGroup)
+	dhGroup := Rfc3526_2048
+	privA, err := GeneratePrivateKey(dhGroup)
 	if err != nil {
 		panic(err)
 	}
-	pubA := generatePublicKey(dhGroup, privA)
+	pubA := GeneratePublicKey(dhGroup, privA)
 
-	privB, err := generatePrivateKey(dhGroup)
+	privB, err := GeneratePrivateKey(dhGroup)
 	if err != nil {
 		panic(err)
 	}
-	pubB := generatePublicKey(dhGroup, privB)
+	pubB := GeneratePublicKey(dhGroup, privB)
 
-	sharedA := sharedSecret(dhGroup, privA, pubB)
-	sharedB := sharedSecret(dhGroup, privB, pubA)
+	sharedA := SharedSecret(dhGroup, privA, pubB)
+	sharedB := SharedSecret(dhGroup, privB, pubA)
 	if !bytes.Equal(sharedA, sharedB) {
 		t.Fatalf("sharedA != sharedB")
 	}
@@ -58,19 +59,19 @@ func TestIsSafePrime(t *testing.T) {
 		}
 	}
 
-	if !isSafePrime(dhGroup.p) {
-		t.Fatalf("dhGroup.p is not safe")
+	if !isSafePrime(Rfc3526_2048.P) {
+		t.Fatalf("Rfc3526_2048.P is not safe")
 	}
 }
 
 func TestIsInSmallSubgroup(t *testing.T) {
 	for _, x := range []int64{2, 3, 4, 5, 6, 7, 8, 9} {
-		if isInSmallSubgroup(big.NewInt(x), big.NewInt(11)) {
+		if IsInSmallSubgroup(big.NewInt(x), big.NewInt(11)) {
 			t.Fatalf("%v unexpectedly in small subgroup", x)
 		}
 	}
 	for _, x := range []int64{1, 10} {
-		if !isInSmallSubgroup(big.NewInt(x), big.NewInt(11)) {
+		if !IsInSmallSubgroup(big.NewInt(x), big.NewInt(11)) {
 			t.Fatalf("%v unexpectedly not in small subgroup", x)
 		}
 	}
@@ -89,7 +90,7 @@ func TestBytes(t *testing.T) {
 		{1, 373, 16, []byte{0, 1}},
 	} {
 		// Generator doesn't matter for the Bytes function.
-		g := dhgroup{g: big.NewInt(2), p: big.NewInt(tst.p), bitLen: tst.bitLen}
+		g := DhGroup{G: big.NewInt(2), P: big.NewInt(tst.p), BitLen: tst.bitLen}
 		actual := g.Bytes(big.NewInt(tst.x))
 		if diff := deep.Equal(actual, tst.b); diff != nil {
 			t.Fatalf("diff: %v\n", diff)
@@ -110,7 +111,7 @@ func TestIsInGroup(t *testing.T) {
 		{11, 11, false},
 		{12, 11, false},
 	} {
-		actual := isInGroup(big.NewInt(tst.x), big.NewInt(tst.p))
+		actual := IsInGroup(big.NewInt(tst.x), big.NewInt(tst.p))
 		if actual != tst.expected {
 			t.Fatalf("x=%v got %v", tst.x, actual)
 		}

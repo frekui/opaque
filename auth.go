@@ -15,6 +15,7 @@ import (
 	"math/big"
 
 	"github.com/frekui/opaque/internal/pkg/authenc"
+	"github.com/frekui/opaque/internal/pkg/dh"
 	"golang.org/x/crypto/hkdf"
 )
 
@@ -136,11 +137,11 @@ func AuthInit(username, password string) (*AuthClientSession, AuthMsg1, error) {
 	if err != nil {
 		return nil, AuthMsg1{}, err
 	}
-	sess.x, err = generatePrivateKey(dhGroup)
+	sess.x, err = dh.GeneratePrivateKey(dhGroup)
 	if err != nil {
 		return nil, AuthMsg1{}, err
 	}
-	sess.dhPubClient = generatePublicKey(dhGroup, sess.x)
+	sess.dhPubClient = dh.GeneratePublicKey(dhGroup, sess.x)
 	msg1.DhPubClient = sess.dhPubClient
 
 	return &sess, msg1, nil
@@ -158,7 +159,7 @@ func AuthInit(username, password string) (*AuthClientSession, AuthMsg1, error) {
 //
 // See also AuthInit, Auth2, and Auth3.
 func Auth1(privS *rsa.PrivateKey, user *User, msg1 AuthMsg1) (*AuthServerSession, AuthMsg2, error) {
-	y, err := generatePrivateKey(dhGroup)
+	y, err := dh.GeneratePrivateKey(dhGroup)
 	if err != nil {
 		return nil, AuthMsg2{}, err
 	}
@@ -169,7 +170,7 @@ func Auth1(privS *rsa.PrivateKey, user *User, msg1 AuthMsg1) (*AuthServerSession
 		return nil, AuthMsg2{}, err
 	}
 	msg2.EnvU = user.EnvU
-	msg2.DhPubServer = generatePublicKey(dhGroup, y)
+	msg2.DhPubServer = dh.GeneratePublicKey(dhGroup, y)
 
 	h := hasher()
 	h.Write(dhGroup.Bytes(msg1.DhPubClient))
@@ -290,7 +291,7 @@ func verifyDhMac(key []byte, pk *rsa.PublicKey, origMac []byte) bool {
 }
 
 func dhSecrets(dhPriv, dhPub *big.Int) (dhSharedSecret, dhMacKey []byte, err error) {
-	kdf := hkdf.New(hasher, sharedSecret(dhGroup, dhPriv, dhPub), nil, nil)
+	kdf := hkdf.New(hasher, dh.SharedSecret(dhGroup, dhPriv, dhPub), nil, nil)
 	dhSharedSecret = make([]byte, 16)
 	dhMacKey = make([]byte, 16)
 	_, err = io.ReadFull(kdf, dhSharedSecret)
