@@ -28,7 +28,7 @@ func dhOprf1(x string) (a, r *big.Int, err error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		hPrime := hashPrime(dhGroup, []byte(x))
+		hPrime := hashToGroup(dhGroup, []byte(x))
 		a = new(big.Int)
 		a.Exp(dhGroup.g, r, dhGroup.p)
 		a.Mul(hPrime, a)
