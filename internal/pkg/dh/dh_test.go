@@ -90,7 +90,7 @@ func TestBytes(t *testing.T) {
 		{1, 373, 16, []byte{0, 1}},
 	} {
 		// Generator doesn't matter for the Bytes function.
-		g := DhGroup{G: big.NewInt(2), P: big.NewInt(tst.p), BitLen: tst.bitLen}
+		g := Group{G: big.NewInt(2), P: big.NewInt(tst.p), BitLen: tst.bitLen}
 		actual := g.Bytes(big.NewInt(tst.x))
 		if diff := deep.Equal(actual, tst.b); diff != nil {
 			t.Fatalf("diff: %v\n", diff)

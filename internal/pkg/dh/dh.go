@@ -21,7 +21,8 @@ func hasher() hash.Hash {
 	return sha256.New()
 }
 
-type DhGroup struct {
+// Group represents the group Z^*_p.
+type Group struct {
 	// Group generator.
 	G *big.Int
 
@@ -31,7 +32,7 @@ type DhGroup struct {
 	BitLen int
 }
 
-func (g DhGroup) Bytes(x *big.Int) []byte {
+func (g Group) Bytes(x *big.Int) []byte {
 	z := new(big.Int)
 	z.Mod(x, g.P)
 	b := z.Bytes()
@@ -43,11 +44,11 @@ func (g DhGroup) Bytes(x *big.Int) []byte {
 
 // HashToGroup is the H' hash function from the I-D. It hashes byte slices to
 // group elements (i.e., elements in Z^*_p).
-func HashToGroup(dh DhGroup, data []byte) *big.Int {
+func HashToGroup(g Group, data []byte) *big.Int {
 	kdf := hkdf.New(hasher, data, nil, nil)
 
 	for {
-		x, err := rand.Int(kdf, dh.P)
+		x, err := rand.Int(kdf, g.P)
 		if err != nil {
 			panic(err)
 		}
@@ -58,7 +59,7 @@ func HashToGroup(dh DhGroup, data []byte) *big.Int {
 }
 
 // Rfc3526_2048 is the 2048-bit MODP Group from RFC 3526.
-var Rfc3526_2048 DhGroup
+var Rfc3526_2048 Group
 
 func init() {
 	p, ok := new(big.Int).SetString("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF", 16)
@@ -66,7 +67,7 @@ func init() {
 		panic("big.Int SetString failed")
 	}
 	g := new(big.Int).SetInt64(2)
-	Rfc3526_2048 = DhGroup{G: g, P: p, BitLen: 2048}
+	Rfc3526_2048 = Group{G: g, P: p}
 }
 
 // IsInSmallSubgroup returns true if x belongs to a small subgroup of Z^*_p.
@@ -97,9 +98,9 @@ func IsInGroup(x *big.Int, p *big.Int) bool {
 	return true
 }
 
-func GeneratePrivateKey(dh DhGroup) (*big.Int, error) {
+func GeneratePrivateKey(g Group) (*big.Int, error) {
 	for {
-		key, err := rand.Int(rand.Reader, dh.P)
+		key, err := rand.Int(rand.Reader, g.P)
 		if err != nil {
 			return nil, err
 		}
@@ -109,14 +110,14 @@ func GeneratePrivateKey(dh DhGroup) (*big.Int, error) {
 	}
 }
 
-func GeneratePublicKey(dh DhGroup, privKey *big.Int) *big.Int {
+func GeneratePublicKey(g Group, privKey *big.Int) *big.Int {
 	ret := new(big.Int)
-	return ret.Exp(dh.G, privKey, dh.P)
+	return ret.Exp(g.G, privKey, g.P)
 }
 
-func SharedSecret(dh DhGroup, privKey *big.Int, otherPubKey *big.Int) []byte {
+func SharedSecret(g Group, privKey *big.Int, otherPubKey *big.Int) []byte {
 	s := new(big.Int)
-	s.Exp(otherPubKey, privKey, dh.P)
+	s.Exp(otherPubKey, privKey, g.P)
 	h := hasher()
 	h.Write(s.Bytes())
 	return h.Sum(nil)
