@@ -79,18 +79,17 @@ func TestIsInSmallSubgroup(t *testing.T) {
 
 func TestBytes(t *testing.T) {
 	for _, tst := range []struct {
-		x      int64
-		p      int64
-		bitLen int
-		b      []byte
+		x int64
+		p int64
+		b []byte
 	}{
-		{0, 11, 8, []byte{0}},
-		{5, 11, 8, []byte{5}},
-		{300, 373, 16, []byte{1, 44}},
-		{1, 373, 16, []byte{0, 1}},
+		{0, 11, []byte{0}},
+		{5, 11, []byte{5}},
+		{300, 373, []byte{1, 44}},
+		{1, 373, []byte{0, 1}},
 	} {
 		// Generator doesn't matter for the Bytes function.
-		g := Group{G: big.NewInt(2), P: big.NewInt(tst.p), BitLen: tst.bitLen}
+		g := Group{G: big.NewInt(2), P: big.NewInt(tst.p)}
 		actual := g.Bytes(big.NewInt(tst.x))
 		if diff := deep.Equal(actual, tst.b); diff != nil {
 			t.Fatalf("diff: %v\n", diff)

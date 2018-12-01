@@ -12,6 +12,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"hash"
+	"math"
 	"math/big"
 
 	"golang.org/x/crypto/hkdf"
@@ -28,16 +29,15 @@ type Group struct {
 
 	// Group order.
 	P *big.Int
-
-	BitLen int
 }
 
 func (g Group) Bytes(x *big.Int) []byte {
 	z := new(big.Int)
 	z.Mod(x, g.P)
 	b := z.Bytes()
-	padLen := g.BitLen/8 - len(b)
-	res := make([]byte, g.BitLen/8)
+	bytelen := int(math.Ceil(float64(g.P.BitLen()) / 8))
+	padLen := bytelen - len(b)
+	res := make([]byte, bytelen)
 	copy(res[padLen:], b)
 	return res
 }
