@@ -34,6 +34,6 @@ anything important.
 
 [2] Jarecki, S., Krawczyk, H., and J. Xu, "OPAQUE: An Asymmetric PAKE Protocol
 Secure Against Pre-Computation Attacks", Eurocrypt , 2018. (Full version
-available at https://eprint.iacr.org/2018/163.pdf)
+available at https://eprint.iacr.org/2018/163)
 */
 package opaque
